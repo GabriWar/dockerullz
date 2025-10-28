@@ -13,6 +13,7 @@ Um stack completo de containers Docker para automação, mídia e monitoramento.
 - **Uptime Kuma** (3001) - Monitoramento de uptime
 - **Nextcloud AIO** (80/8080/8443) - Nuvem privada completa
 - **Open Notebook** (8502/5055) - Notebook AI com OpenAI
+- **Open WebUI** (configurável) - Interface web para modelos de IA
 
 ### 🎬 Stack de Mídia
 - **Jellyfin** (8096) - Servidor de mídia
@@ -62,6 +63,7 @@ docker-compose up -d
 - **Uptime Kuma**: http://localhost:3001
 - **Nextcloud AIO**: http://localhost:8080
 - **Open Notebook**: http://localhost:8502
+- **Open WebUI**: http://localhost:${OPEN_WEBUI_PORT:-3002}
 
 ## ⚙️ Configuração
 
@@ -70,6 +72,23 @@ Edite o arquivo `.env` para personalizar:
 - Caminhos de mídia
 - Portas dos serviços
 - Credenciais de banco de dados
+
+### 🤖 Open WebUI
+
+O Open WebUI é uma interface web moderna para interagir com modelos de IA. Configurações disponíveis:
+
+- **Porta**: Configure `OPEN_WEBUI_PORT` no arquivo `.env` (padrão: 3002)
+- **Modo single-user**: Ativado por padrão (sem necessidade de login)
+- **Armazenamento persistente**: Dados salvos no volume `open_webui_data`
+- **Suporte a GPU**: Disponível (descomente as linhas no docker-compose.yml)
+- **Conexão externa com Ollama**: Configure `OLLAMA_BASE_URL` se necessário
+
+**Exemplo de configuração no .env:**
+```bash
+# Open WebUI
+OPEN_WEBUI_PORT=3002
+# OLLAMA_BASE_URL=https://seu-servidor-ollama.com
+```
 
 ## 📁 Estrutura
 
