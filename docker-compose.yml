@@ -357,6 +357,27 @@ services:
             - 8686:8686
         restart: unless-stopped
 
+    # Open WebUI
+    open-webui:
+        image: ghcr.io/open-webui/open-webui:main-slim
+        container_name: open-webui
+        ports:
+            - 3000:8080
+        volumes:
+            - open_webui_data:/app/backend/data
+        environment:
+            - WEBUI_AUTH=False  # Modo single-user (sem login)
+            # - OLLAMA_BASE_URL=https://example.com  # Descomente para conectar a Ollama em servidor externo
+        restart: unless-stopped
+        # Para suporte a GPU NVIDIA, descomente as linhas abaixo:
+        # deploy:
+        #     resources:
+        #         reservations:
+        #             devices:
+        #                 - driver: nvidia
+        #                   count: all
+        #                   capabilities: [gpu]
+
 networks:
     duplicati:
         driver: bridge
@@ -372,6 +393,7 @@ volumes:
     n8n_data:
     uptime_kuma_data:
     nextcloud_aio_mastercontainer:
+    open_webui_data:
     myMedia:
         driver: local
         driver_opts:
