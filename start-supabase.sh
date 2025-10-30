@@ -21,14 +21,144 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+# Load environment variables from main .env
+if [ ! -f .env ]; then
+    echo -e "${RED}❌ Error: Main .env file not found${NC}"
+    exit 1
+fi
+
+echo -e "${BLUE}📋 Loading configuration from main .env...${NC}"
+source .env
+
+# Validate critical variables from the main .env and set safe defaults where reasonable
+if [ -z "${SUPABASE_POSTGRES_PORT}" ]; then
+    echo -e "${YELLOW}⚠️  SUPABASE_POSTGRES_PORT not set in main .env — defaulting to 5434${NC}"
+    SUPABASE_POSTGRES_PORT=5434
+fi
+
+if [ -z "${SUPABASE_JWT_SECRET}" ]; then
+    echo -e "${RED}❌ Error: SUPABASE_JWT_SECRET is not set in main .env — this is required${NC}"
+    exit 1
+fi
+
+if [ -z "${SUPABASE_POSTGRES_PASSWORD}" ]; then
+    echo -e "${RED}❌ Error: SUPABASE_POSTGRES_PASSWORD is not set in main .env — this is required${NC}"
+    exit 1
+fi
+
 # Navigate to supabase-project directory
 cd supabase-project
 
-# Check if .env file exists
-if [ ! -f .env ]; then
-    echo -e "${RED}❌ Error: .env file not found in supabase-project/${NC}"
-    exit 1
-fi
+# Generate supabase .env from main environment variables
+echo -e "${BLUE}📝 Generating Supabase .env file...${NC}"
+cat > .env << ENV_EOF
+############
+# Secrets
+############
+
+POSTGRES_PASSWORD=${SUPABASE_POSTGRES_PASSWORD}
+JWT_SECRET=${SUPABASE_JWT_SECRET}
+ANON_KEY=WILL_BE_GENERATED
+SERVICE_ROLE_KEY=WILL_BE_GENERATED
+DASHBOARD_USERNAME=${SUPABASE_DASHBOARD_USERNAME}
+DASHBOARD_PASSWORD=${SUPABASE_DASHBOARD_PASSWORD}
+SECRET_KEY_BASE=${SUPABASE_SECRET_KEY_BASE}
+VAULT_ENC_KEY=${SUPABASE_VAULT_ENC_KEY}
+PG_META_CRYPTO_KEY=${SUPABASE_PG_META_CRYPTO_KEY}
+
+############
+# Database
+############
+
+POSTGRES_HOST=db
+POSTGRES_DB=postgres
+POSTGRES_PORT=${SUPABASE_POSTGRES_PORT}
+
+############
+# Supavisor
+############
+
+POOLER_PROXY_PORT_TRANSACTION=${SUPABASE_POOLER_PORT}
+POOLER_DEFAULT_POOL_SIZE=20
+POOLER_MAX_CLIENT_CONN=100
+POOLER_TENANT_ID=${SUPABASE_POOLER_TENANT_ID}
+POOLER_DB_POOL_SIZE=5
+
+############
+# API Proxy
+############
+
+KONG_HTTP_PORT=${SUPABASE_KONG_HTTP_PORT}
+KONG_HTTPS_PORT=${SUPABASE_KONG_HTTPS_PORT}
+
+############
+# API
+############
+
+PGRST_DB_SCHEMAS=public,storage,graphql_public
+
+############
+# Auth
+############
+
+SITE_URL=${SUPABASE_SITE_URL}
+ADDITIONAL_REDIRECT_URLS=
+JWT_EXPIRY=3600
+DISABLE_SIGNUP=false
+API_EXTERNAL_URL=http://localhost:${SUPABASE_KONG_HTTP_PORT}
+
+## Mailer Config
+MAILER_URLPATHS_CONFIRMATION="/auth/v1/verify"
+MAILER_URLPATHS_INVITE="/auth/v1/verify"
+MAILER_URLPATHS_RECOVERY="/auth/v1/verify"
+MAILER_URLPATHS_EMAIL_CHANGE="/auth/v1/verify"
+
+## Email auth
+ENABLE_EMAIL_SIGNUP=true
+ENABLE_EMAIL_AUTOCONFIRM=false
+SMTP_ADMIN_EMAIL=admin@example.com
+SMTP_HOST=${SUPABASE_SMTP_HOST}
+SMTP_PORT=${SUPABASE_SMTP_PORT}
+SMTP_USER=${SUPABASE_SMTP_USER}
+SMTP_PASS=${SUPABASE_SMTP_PASS}
+SMTP_SENDER_NAME=fake_sender
+ENABLE_ANONYMOUS_USERS=false
+
+## Phone auth
+ENABLE_PHONE_SIGNUP=true
+ENABLE_PHONE_AUTOCONFIRM=true
+
+############
+# Studio
+############
+
+STUDIO_DEFAULT_ORGANIZATION=Default Organization
+STUDIO_DEFAULT_PROJECT=Default Project
+SUPABASE_PUBLIC_URL=http://localhost:${SUPABASE_KONG_HTTP_PORT}
+IMGPROXY_ENABLE_WEBP_DETECTION=true
+OPENAI_API_KEY=
+
+############
+# Functions
+############
+
+FUNCTIONS_VERIFY_JWT=false
+
+############
+# Logs
+############
+
+LOGFLARE_PUBLIC_ACCESS_TOKEN=your-super-secret-and-long-logflare-key-public
+LOGFLARE_PRIVATE_ACCESS_TOKEN=your-super-secret-and-long-logflare-key-private
+DOCKER_SOCKET_LOCATION=${SUPABASE_DOCKER_SOCKET:-/var/run/docker.sock}
+GOOGLE_PROJECT_ID=GOOGLE_PROJECT_ID
+GOOGLE_PROJECT_NUMBER=GOOGLE_PROJECT_NUMBER
+ENV_EOF
+
+echo -e "${GREEN}✓ Supabase .env generated from main configuration${NC}"
+
+# Restrict permissions on the generated env file since it contains secrets
+chmod 600 .env || true
 
 echo -e "${BLUE}📋 Checking configuration...${NC}"
 
@@ -36,8 +166,8 @@ echo -e "${BLUE}📋 Checking configuration...${NC}"
 if grep -q "ANON_KEY=WILL_BE_GENERATED" .env || grep -q "SERVICE_ROLE_KEY=WILL_BE_GENERATED" .env; then
     echo -e "${YELLOW}🔑 Generating JWT keys...${NC}"
 
-    # Get JWT_SECRET from .env
-    JWT_SECRET=$(grep "^JWT_SECRET=" .env | cut -d'=' -f2)
+    # Get JWT_SECRET from .env (preserve entire RHS even if it contains =)
+    JWT_SECRET=$(sed -n 's/^JWT_SECRET=//p' .env)
 
     # Function to create JWT
     create_jwt() {

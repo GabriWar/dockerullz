@@ -6,6 +6,14 @@
 echo "🕷️  Firecrawl Setup Script"
 echo ""
 
+# Load environment variables from main .env
+if [ -f .env ]; then
+    echo "📋 Loading configuration from main .env..."
+    source .env
+else
+    echo "⚠️  Warning: Main .env file not found, using defaults"
+fi
+
 FIRECRAWL_DIR="./firecrawl"
 
 # Check if Firecrawl directory already exists

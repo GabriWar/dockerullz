@@ -125,6 +125,12 @@ services:
     environment:
       - APACHE_PORT=11000
       - APACHE_IP_BINDING=0.0.0.0
+      # Nextcloud AIO data directory (where Nextcloud files are stored)
+      - NEXTCLOUD_DATADIR=${NEXTCLOUD_DATADIR}
+      # Backup location for Nextcloud AIO (borg backups)
+      - BORG_BACKUP_DIRECTORY=${NEXTCLOUD_BACKUP_DIR}
+      # Additional mount point (optional - for external storage)
+      - NEXTCLOUD_MOUNT=${NEXTCLOUD_MOUNT}
 
   # Open Notebook
   open-notebook:
