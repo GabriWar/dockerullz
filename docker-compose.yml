@@ -1,408 +1,383 @@
-version: '3.8'
-
 name: HeavyStack
 
 services:
-    # Portainer CE
-    portainer:
-        ports:
-            - 9000:9000
-        container_name: portainer
-        restart: always
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-            - portainer_data:/data
-        image: portainer/portainer-ce:latest
+  # Portainer CE
+  portainer:
+    ports:
+      - 9000:9000
+    container_name: portainer
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    image: portainer/portainer-ce:latest
 
-    # Vaultwarden
-    vaultwarden:
-        ports:
-            - 8000:80
-        container_name: vaultwarden
-        restart: unless-stopped
-        image: vaultwarden/server:latest
-        environment:
-            - DOMAIN=${VAULTWARDEN_DOMAIN}
-            - WEBSOCKET_ENABLED=true
-            - WEBSOCKET_ADDRESS=0.0.0.0
-            - WEBSOCKET_PORT=3012
-        volumes:
-            - vaultwarden_data:/data
-        command: server
+  # Portainer Agent
+  portainer_agent:
+    image: portainer/agent:latest
+    container_name: portainer_agent
+    restart: always
+    ports:
+      - 9001:9001
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    environment:
+      - AGENT_SECRET=${AGENT_SECRET}
 
-    # Netdata
-    netdata:
-        image: netdata/netdata
-        container_name: netdata
-        pid: host
-        network_mode: host
-        restart: unless-stopped
-        cap_add:
-            - SYS_PTRACE
-            - SYS_ADMIN
-        security_opt:
-            - apparmor:unconfined
-        volumes:
-            - netdataconfig:/etc/netdata
-            - netdatalib:/var/lib/netdata
-            - netdatacache:/var/cache/netdata
-            - /:/host/root:ro,rslave
-            - /etc/passwd:/host/etc/passwd:ro
-            - /etc/group:/host/etc/group:ro
-            - /etc/localtime:/etc/localtime:ro
-            - /proc:/host/proc:ro
-            - /sys:/host/sys:ro
-            - /etc/os-release:/host/etc/os-release:ro
-            - /var/log:/host/var/log:ro
-            - /var/run/docker.sock:/var/run/docker.sock:ro
-            - /run/dbus:/run/dbus:ro
+  # Vaultwarden
+  vaultwarden:
+    ports:
+      - 8100:80
+    container_name: vaultwarden
+    restart: unless-stopped
+    image: vaultwarden/server:latest
+    environment:
+      - DOMAIN=${VAULTWARDEN_DOMAIN}
+      - WEBSOCKET_ENABLED=true
+      - WEBSOCKET_ADDRESS=0.0.0.0
+      - WEBSOCKET_PORT=3012
+    volumes:
+      - vaultwarden_data:/data
 
-    # n8n
-    n8n:
-        ports:
-            - 5678:5678
-        container_name: n8n
-        restart: unless-stopped
-        image: docker.n8n.io/n8nio/n8n
-        environment:
-            - GENERIC_TIMEZONE=${N8N_TIMEZONE}
-            - TZ=${N8N_TIMEZONE}
-            - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
-            - N8N_RUNNERS_ENABLED=true
-        volumes:
-            - n8n_data:/home/node/.n8n
+  # Netdata (Commented out - network_mode: host conflicts with other services)
+  # netdata:
+  #   image: netdata/netdata
+  #   container_name: netdata
+  #   pid: host
+  #   network_mode: host
+  #   restart: unless-stopped
+  #   cap_add:
+  #     - SYS_PTRACE
+  #     - SYS_ADMIN
+  #   security_opt:
+  #     - apparmor:unconfined
+  #   volumes:
+  #     - netdataconfig:/etc/netdata
+  #     - netdatalib:/var/lib/netdata
+  #     - netdatacache:/var/cache/netdata
+  #     - /:/host/root:ro,rslave
+  #     - /etc/passwd:/host/etc/passwd:ro
+  #     - /etc/group:/host/etc/group:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - /proc:/host/proc:ro
+  #     - /sys:/host/sys:ro
+  #     - /etc/os-release:/host/etc/os-release:ro
+  #     - /var/log:/host/var/log:ro
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #     - /run/dbus:/run/dbus:ro
 
-    # Jellyfin
-    jellyfin:
-        container_name: jellyfin
-        image: jellyfin/jellyfin
-        user: ${JELLYFIN_PUID}:${JELLYFIN_PGID}
-        environment:
-            - JELLYFIN_CACHE_DIR=/var/cache/jellyfin
-            - JELLYFIN_CONFIG_DIR=/etc/jellyfin
-            - JELLYFIN_DATA_DIR=/var/lib/jellyfin
-            - JELLYFIN_LOG_DIR=/var/log/jellyfin
-            - TZ=${JELLYFIN_TIMEZONE}
-        volumes:
-            - ./configs/jellyfin/etc:/etc/jellyfin
-            - ./configs/jellyfin/var-cache:/var/cache/jellyfin
-            - ./configs/jellyfin/var-lib:/var/lib/jellyfin
-            - ./configs/jellyfin/var-log:/var/log/jellyfin
-            - ./configs/jellyfin/timezone:/etc/timezone
-            - myMedia:/mnt/media
-        group_add:
-            - "109"
-        network_mode: "host"
-        devices:
-            - /dev/dri/renderD128:/dev/dri/renderD128
-        restart: unless-stopped
+  # n8n (Commented out - had startup issues)
+  # n8n:
+  #   ports:
+  #     - 5678:5678
+  #   container_name: n8n
+  #   restart: unless-stopped
+  #   image: docker.n8n.io/n8nio/n8n
+  #   environment:
+  #     - GENERIC_TIMEZONE=${N8N_TIMEZONE}
+  #     - TZ=${N8N_TIMEZONE}
+  #     - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+  #     - N8N_RUNNERS_ENABLED=true
+  #   volumes:
+  #     - n8n_data:/home/node/.n8n
 
-    # Homepage
-    homepage:
-        image: ghcr.io/gethomepage/homepage:latest
-        container_name: homepage
-        ports:
-            - 3000:3000
-        volumes:
-            - ./configs/homepage:/app/config
-            - /var/run/docker.sock:/var/run/docker.sock
-        environment:
-            - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
-        restart: unless-stopped
+  # NOTE: Jellyfin and Media Stack services (Jellyseerr, Sonarr, Radarr, Prowlarr, FlareSolverr, qBittorrent)
+  # are now in docker-compose.sudo.yml due to permission requirements
+  # Start them with: ./start-sudo.sh
 
-    # Uptime Kuma
-    uptime-kuma:
-        image: louislam/uptime-kuma:2
-        container_name: uptime-kuma
-        ports:
-            - 3001:3001
-        volumes:
-            - uptime_kuma_data:/app/data
-        restart: unless-stopped
+  # Homepage
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    ports:
+      - 3000:3000
+    volumes:
+      - ./configs/homepage:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
+    restart: unless-stopped
 
-    # Nextcloud AIO
-    nextcloud-aio-mastercontainer:
-        image: ghcr.io/nextcloud-releases/all-in-one:latest
-        container_name: nextcloud-aio-mastercontainer
-        init: true
-        ports:
-            - 80:80
-            - 8080:8080
-            - 8443:8443
-        volumes:
-            - nextcloud_aio_mastercontainer:/mnt/docker-aio-config
-            - /var/run/docker.sock:/var/run/docker.sock:ro
-        restart: unless-stopped
+  # Uptime Kuma
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    ports:
+      - 3001:3001
+    volumes:
+      - uptime_kuma_data:/app/data
+    restart: unless-stopped
 
-    # Open Notebook
-    open-notebook:
-        image: lfnovo/open_notebook:v1-latest-single
-        container_name: open-notebook
-        ports:
-            - 8502:8502
-            - 5055:5055
-        volumes:
-            - ./notebook_data:/app/data
-            - ./surreal_data:/mydata
-        environment:
-            - OPENAI_API_KEY=${OPENAI_API_KEY}
-            - API_URL=${OPENNOTEBOOK_API_URL}
-            - SURREAL_URL=${SURREAL_URL}
-            - SURREAL_USER=${SURREAL_USER}
-            - SURREAL_PASSWORD=${SURREAL_PASSWORD}
-            - SURREAL_NAMESPACE=${SURREAL_NAMESPACE}
-            - SURREAL_DATABASE=${SURREAL_DATABASE}
-        restart: unless-stopped
+  # Nextcloud AIO
+  nextcloud-aio-mastercontainer:
+    image: ghcr.io/nextcloud-releases/all-in-one:latest
+    container_name: nextcloud-aio-mastercontainer
+    init: true
+    ports:
+      - ${NEXTCLOUD_HTTP_PORT:-80}:80
+      - ${NEXTCLOUD_ADMIN_PORT:-8888}:8080
+      - ${NEXTCLOUD_HTTPS_PORT:-8443}:8443
+    volumes:
+      - nextcloud_aio_mastercontainer:/mnt/docker-aio-config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    environment:
+      - APACHE_PORT=11000
+      - APACHE_IP_BINDING=0.0.0.0
 
-    # Duplicati
-    duplicati:
-        image: lscr.io/linuxserver/duplicati:latest
-        container_name: duplicati
-        environment:
-            - PUID=${DUPLICATI_PUID}
-            - PGID=${DUPLICATI_PGID}
-            - TZ=${DUPLICATI_TZ}
-        volumes:
-            - ./configs/duplicati/config:/config
-            - ./configs:/source
-            - ./docker-compose.yml:/source/docker-compose.yml
-            - ./configs/duplicati/restore:/restore
-        networks:
-            - duplicati
-        ports:
-            - 8200:8200
-        restart: unless-stopped
+  # Open Notebook
+  open-notebook:
+    image: lfnovo/open_notebook:v1-latest-single
+    container_name: open-notebook
+    ports:
+      - ${OPEN_NOTEBOOK_PORT:-8502}:8502
+      - ${OPEN_NOTEBOOK_API_PORT:-5056}:5055
+    volumes:
+      - ./notebook_data:/app/data
+      - ./surreal_data:/mydata
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - API_URL=${OPENNOTEBOOK_API_URL}
+      - SURREAL_URL=${SURREAL_URL}
+      - SURREAL_USER=${SURREAL_USER}
+      - SURREAL_PASSWORD=${SURREAL_PASSWORD}
+      - SURREAL_NAMESPACE=${SURREAL_NAMESPACE}
+      - SURREAL_DATABASE=${SURREAL_DATABASE}
+    restart: unless-stopped
 
-    # Bazarr
-    bazarr:
-        image: lscr.io/linuxserver/bazarr:latest
-        container_name: bazarr
-        hostname: bazarr
-        networks:
-            - mediarr
-        environment:
-            - PUID=${BAZARR_PUID}
-            - PGID=${BAZARR_PGID}
-            - TZ=${BAZARR_TZ}
-        volumes:
-            - ./configs/mediarr/bazarr:/config
-            - myMedia:/mnt/media
-        ports:
-            - 6767:6767
-        restart: unless-stopped
-        depends_on:
-            - sonarr
-            - radarr
+  # Duplicati
+  duplicati:
+    image: lscr.io/linuxserver/duplicati:latest
+    container_name: duplicati
+    environment:
+      - PUID=${DUPLICATI_PUID}
+      - PGID=${DUPLICATI_PGID}
+      - TZ=${DUPLICATI_TZ}
+    volumes:
+      - ./configs/duplicati/config:/config
+      - ./configs:/source
+      - ./docker-compose.yml:/source/docker-compose.yml
+      - ./configs/duplicati/restore:/restore
+    networks:
+      - duplicati
+    ports:
+      - 8200:8200
+    restart: unless-stopped
 
-    # Jellyseerr
-    jellyseerr:
-        image: fallenbagel/jellyseerr:latest
-        container_name: jellyseerr
-        hostname: jellyseerr
-        networks:
-            - mediarr
-        user: ${JELLYFIN_PUID}:${JELLYFIN_PGID}
-        environment:
-            - TZ=${JELLYSEERR_TIMEZONE}
-        ports:
-            - 5055:5055
-        volumes:
-            - ./configs/mediarr/jellyseerr:/app/config
-        restart: unless-stopped
-        depends_on:
-            - sonarr
-            - radarr
+  # Syncthing
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: syncthing
+    hostname: syncthing
+    environment:
+      - PUID=${SYNCTHING_PUID:-1000}
+      - PGID=${SYNCTHING_PGID:-1000}
+      - TZ=${SYNCTHING_TZ:-America/Sao_Paulo}
+    volumes:
+      - ./configs/syncthing:/config
+      - ${SYNCTHING_DATA1:-./syncthing_data1}:/data1
+      - ${SYNCTHING_DATA2:-./syncthing_data2}:/data2
+    ports:
+      - ${SYNCTHING_WEB_PORT:-8384}:8384
+      - ${SYNCTHING_LISTEN_PORT:-22000}:22000/tcp
+      - ${SYNCTHING_LISTEN_PORT:-22000}:22000/udp
+      - ${SYNCTHING_DISCOVERY_PORT:-21027}:21027/udp
+    restart: unless-stopped
 
-    # Prowlarr
-    prowlarr:
-        image: linuxserver/prowlarr:latest
-        container_name: prowlarr
-        hostname: prowlarr
-        networks:
-            - mediarr
-        environment:
-            - PUID=${PROWLARR_PUID}
-            - PGID=${PROWLARR_PGID}
-            - TZ=${PROWLARR_TZ}
-        volumes:
-            - ./configs/mediarr/prowlarr:/config
-        ports:
-            - 9696:9696
-        restart: unless-stopped
-        depends_on:
-            - flaresolverr
+  # Bazarr
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    hostname: bazarr
+    networks:
+      - mediarr
+    environment:
+      - PUID=${BAZARR_PUID}
+      - PGID=${BAZARR_PGID}
+      - TZ=${BAZARR_TZ}
+    volumes:
+      - ./configs/mediarr/bazarr:/config
+      - myMedia:/mnt/media
+    ports:
+      - 6767:6767
+    restart: unless-stopped
 
-    # FlareSolverr
-    flaresolverr:
-        image: ghcr.io/flaresolverr/flaresolverr:latest
-        container_name: flaresolverr
-        hostname: flaresolverr
-        networks:
-            - mediarr
-        environment:
-            - LOG_LEVEL=${FLARESOLVERR_LOG_LEVEL}
-            - LOG_HTML=${FLARESOLVERR_LOG_HTML}
-            - CAPTCHA_SOLVER=${FLARESOLVERR_CAPTCHA_SOLVER}
-            - TZ=${FLARESOLVERR_TZ}
-        restart: unless-stopped
+  # Readarr (Temporarily commented - manifest issue, will debug separately)
+  # readarr:
+  #   image: lscr.io/linuxserver/readarr:nightly
+  #   container_name: readarr
+  #   hostname: readarr
+  #   networks:
+  #     - mediarr
+  #   environment:
+  #     - PUID=${READARR_PUID}
+  #     - PGID=${READARR_PGID}
+  #     - TZ=${READARR_TZ}
+  #   volumes:
+  #     - ./configs/mediarr/readarr:/config
+  #     - myMedia:/mnt/media
+  #     - myDlFolders:/mnt/downloads
+  #   ports:
+  #     - 8787:8787
+  #   restart: unless-stopped
 
-    # qBittorrent
-    qbittorrent:
-        image: lscr.io/linuxserver/qbittorrent:latest
-        container_name: qbittorrent
-        hostname: qbittorrent
-        networks:
-            - mediarr
-        environment:
-            - PUID=${QBITTORRENT_PUID}
-            - PGID=${QBITTORRENT_PGID}
-            - TZ=${QBITTORRENT_TZ}
-            - WEBUI_PORT=${QBITTORRENT_WEBUI_PORT}
-        volumes:
-            - ./configs/mediarr/qbittorrent:/config
-            - myDlFolders:/downloads
-        ports:
-            - 8080:8080
-            - 6881:6881
-            - 6881:6881/udp
-        restart: unless-stopped
+  # Lidarr
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    hostname: lidarr
+    networks:
+      - mediarr
+    environment:
+      - PUID=${LIDARR_PUID}
+      - PGID=${LIDARR_PGID}
+      - TZ=${LIDARR_TZ}
+    volumes:
+      - ./configs/mediarr/lidarr:/config
+      - myMedia:/mnt/media
+      - myDlFolders:/mnt/downloads
+    depends_on:
+      - prowlarr
+      - qbittorrent
+    ports:
+      - 8686:8686
+    restart: unless-stopped
 
-    # Radarr
-    radarr:
-        image: lscr.io/linuxserver/radarr:latest
-        container_name: radarr
-        hostname: radarr
-        networks:
-            - mediarr
-        environment:
-            - PUID=${RADARR_PUID}
-            - PGID=${RADARR_PGID}
-            - TZ=${RADARR_TZ}
-        volumes:
-            - ./configs/mediarr/radarr:/config
-            - myMedia:/mnt/media
-            - myDlFolders:/mnt/downloads
-        ports:
-            - 7878:7878
-        restart: unless-stopped
-        depends_on:
-            - prowlarr
-            - qbittorrent
-            - jellyfin
+  # Ollama
+  ollama:
+    image: ollama/ollama:${OLLAMA_DOCKER_TAG:-latest}
+    container_name: ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - ${OLLAMA_PORT:-11434}:11434
+    restart: unless-stopped
+    # Para suporte a GPU NVIDIA, descomente as linhas abaixo:
+    # deploy:
+    #     resources:
+    #         reservations:
+    #             devices:
+    #                 - driver: nvidia
+    #                   count: all
+    #                   capabilities: [gpu]
 
-    # Readarr
-    readarr:
-        image: lscr.io/linuxserver/readarr:develop
-        container_name: readarr
-        hostname: readarr
-        networks:
-            - mediarr
-        environment:
-            - PUID=${READARR_PUID}
-            - PGID=${READARR_PGID}
-            - TZ=${READARR_TZ}
-        volumes:
-            - ./configs/mediarr/readarr:/config
-            - myMedia:/mnt/media
-            - myDlFolders:/mnt/downloads
-        ports:
-            - 8787:8787
-        restart: unless-stopped
-        depends_on:
-            - prowlarr
-            - qbittorrent
+  # Open WebUI
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:${WEBUI_DOCKER_TAG:-main-slim}
+    container_name: open-webui
+    ports:
+      - ${OPEN_WEBUI_PORT:-3002}:8080
+    volumes:
+      - open_webui_data:/app/backend/data
+    environment:
+      - WEBUI_AUTH=False # Modo single-user (sem login)
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    extra_hosts:
+      - host.docker.internal:host-gateway
 
-    # Sonarr
-    sonarr:
-        image: lscr.io/linuxserver/sonarr:latest
-        container_name: sonarr
-        hostname: sonarr
-        networks:
-            - mediarr
-        environment:
-            - PUID=${SONARR_PUID}
-            - PGID=${SONARR_PGID}
-            - TZ=${SONARR_TZ}
-        volumes:
-            - ./configs/mediarr/sonarr:/config
-            - myMedia:/mnt/media
-            - myDlFolders:/mnt/downloads
-        depends_on:
-            - prowlarr
-            - qbittorrent
-            - jellyfin
-        ports:
-            - 8989:8989
-        restart: unless-stopped
+  # Firecrawl - Web Scraping API (Commented out - requires building from source, not available as stable pre-built image)
+  # To use Firecrawl: clone https://github.com/mendableai/firecrawl and run docker compose build
+  # firecrawl-postgres:
+  #   image: postgres:15-alpine
+  #   container_name: firecrawl-postgres
+  #   networks:
+  #     - firecrawl
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_DB=postgres
+  #   volumes:
+  #     - firecrawl_postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
 
-    # Lidarr
-    lidarr:
-        image: lscr.io/linuxserver/lidarr:latest
-        container_name: lidarr
-        hostname: lidarr
-        networks:
-            - mediarr
-        environment:
-            - PUID=${LIDARR_PUID}
-            - PGID=${LIDARR_PGID}
-            - TZ=${LIDARR_TZ}
-        volumes:
-            - ./configs/mediarr/lidarr:/config
-            - myMedia:/mnt/media
-            - myDlFolders:/mnt/downloads
-        depends_on:
-            - prowlarr
-            - qbittorrent
-        ports:
-            - 8686:8686
-        restart: unless-stopped
+  # firecrawl-redis:
+  #   image: redis:alpine
+  #   container_name: firecrawl-redis
+  #   networks:
+  #     - firecrawl
+  #   volumes:
+  #     - firecrawl_redis_data:/data
+  #   restart: unless-stopped
+  #   command: redis-server --bind 0.0.0.0
 
-    # Open WebUI
-    open-webui:
-        image: ghcr.io/open-webui/open-webui:main-slim
-        container_name: open-webui
-        ports:
-            - ${OPEN_WEBUI_PORT:-3002}:8080
-        volumes:
-            - open_webui_data:/app/backend/data
-        environment:
-            - WEBUI_AUTH=False  # Modo single-user (sem login)
-            # - OLLAMA_BASE_URL=https://example.com  # Descomente para conectar a Ollama em servidor externo
-        restart: unless-stopped
-        # Para suporte a GPU NVIDIA, descomente as linhas abaixo:
-        # deploy:
-        #     resources:
-        #         reservations:
-        #             devices:
-        #                 - driver: nvidia
-        #                   count: all
-        #                   capabilities: [gpu]
+  # firecrawl-playwright:
+  #   image: ghcr.io/firecrawl/playwright-service:latest
+  #   container_name: firecrawl-playwright
+  #   networks:
+  #     - firecrawl
+  #   environment:
+  #     - PORT=3000
+  #     - PROXY_SERVER=${FIRECRAWL_PROXY_SERVER:-}
+  #     - PROXY_USERNAME=${FIRECRAWL_PROXY_USERNAME:-}
+  #     - PROXY_PASSWORD=${FIRECRAWL_PROXY_PASSWORD:-}
+  #     - BLOCK_MEDIA=${FIRECRAWL_BLOCK_MEDIA:-false}
+  #   restart: unless-stopped
+
+  # firecrawl-api:
+  #   image: ghcr.io/firecrawl/firecrawl:latest
+  #   container_name: firecrawl-api
+  #   networks:
+  #     - firecrawl
+  #   ports:
+  #     - ${FIRECRAWL_PORT:-3003}:3002
+  #   environment:
+  #     - HOST=0.0.0.0
+  #     - PORT=3002
+  #     - REDIS_URL=redis://firecrawl-redis:6379
+  #     - REDIS_RATE_LIMIT_URL=redis://firecrawl-redis:6379
+  #     - PLAYWRIGHT_MICROSERVICE_URL=http://firecrawl-playwright:3000/scrape
+  #     - NUQ_DATABASE_URL=postgres://postgres:postgres@firecrawl-postgres:5432/postgres
+  #     - USE_DB_AUTHENTICATION=${FIRECRAWL_USE_DB_AUTHENTICATION:-false}
+  #     - BULL_AUTH_KEY=${FIRECRAWL_BULL_AUTH_KEY:-CHANGEME}
+  #     - OPENAI_API_KEY=${FIRECRAWL_OPENAI_API_KEY:-}
+  #     - OPENAI_BASE_URL=${FIRECRAWL_OPENAI_BASE_URL:-}
+  #     - MODEL_NAME=${FIRECRAWL_MODEL_NAME:-}
+  #     - OLLAMA_BASE_URL=${FIRECRAWL_OLLAMA_BASE_URL:-}
+  #     - SEARXNG_ENDPOINT=${FIRECRAWL_SEARXNG_ENDPOINT:-}
+  #     - PROXY_SERVER=${FIRECRAWL_PROXY_SERVER:-}
+  #     - PROXY_USERNAME=${FIRECRAWL_PROXY_USERNAME:-}
+  #     - PROXY_PASSWORD=${FIRECRAWL_PROXY_PASSWORD:-}
+  #   depends_on:
+  #     - firecrawl-postgres
+  #     - firecrawl-redis
+  #     - firecrawl-playwright
+  #   restart: unless-stopped
+  #   ulimits:
+  #     nofile:
+  #       soft: 65535
+  #       hard: 65535
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
 
 networks:
-    duplicati:
-        driver: bridge
-    mediarr:
-        driver: bridge
+  duplicati:
+    driver: bridge
+  mediarr:
+    driver: bridge
+  firecrawl:
+    driver: bridge
 
 volumes:
-    portainer_data:
-    vaultwarden_data:
-    netdataconfig:
-    netdatalib:
-    netdatacache:
-    n8n_data:
-    uptime_kuma_data:
-    nextcloud_aio_mastercontainer:
-    open_webui_data:
-    myMedia:
-        driver: local
-        driver_opts:
-            type: none
-            o: bind
-            device: ${MEDIA_PATH}
-    myDlFolders:
-        driver: local
-        driver_opts:
-            type: none
-            o: bind
-            device: ${DOWNLOADS_PATH}
+  portainer_data:
+  vaultwarden_data:
+  netdataconfig:
+  netdatalib:
+  netdatacache:
+  n8n_data:
+  uptime_kuma_data:
+  nextcloud_aio_mastercontainer:
+  ollama_data:
+  open_webui_data:
+  firecrawl_postgres_data:
+  firecrawl_redis_data:
+  # myMedia and myDlFolders volumes are now managed in docker-compose.sudo.yml
+  myMedia:
+    external: true
+    name: heavystack_myMedia
+  myDlFolders:
+    external: true
+    name: heavystack_myDlFolders

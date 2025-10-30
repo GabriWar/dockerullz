@@ -1,1 +1,19 @@
+# Environment files
 .env
+
+# Supabase
+supabase/
+supabase-project/.env
+supabase-project/volumes/
+
+# Firecrawl
+firecrawl/
+!firecrawl/.env.example
+
+# Data directories
+notebook_data/
+surreal_data/
+configs/
+
+# Logs
+*.log
