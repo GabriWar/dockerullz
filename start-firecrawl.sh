@@ -32,9 +32,19 @@ if [ -d "$FIRECRAWL_DIR" ]; then
         if [ -f ../supabase-project/.env ]; then
             echo "📋 Loading Supabase configuration..."
             source ../supabase-project/.env
+            echo "✅ Supabase keys synchronized from supabase-project/.env"
+        else
+            echo "⚠️  Supabase .env not found, Supabase features may not work"
         fi
         
         # Regenerate .env file with updated variables
+        # Automatically enable DB authentication if Supabase keys are available
+        if [ -n "$ANON_KEY" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+            ENABLE_DB_AUTH=${FIRECRAWL_USE_DB_AUTHENTICATION:-true}
+        else
+            ENABLE_DB_AUTH=${FIRECRAWL_USE_DB_AUTHENTICATION:-false}
+        fi
+        
         cat > .env <<EOF
 # Port Configuration (external port, internal is 3002)
 PORT=${FIRECRAWL_PORT:-3003}
@@ -51,12 +61,13 @@ PLAYWRIGHT_MICROSERVICE_URL=http://playwright-service:3000/scrape
 # Database Configuration - Using Supabase for authentication
 # Note: Change tracking requires Supabase, so set to true if you want to use change tracking
 # Even with USE_DB_AUTHENTICATION=true, API keys are still optional for self-hosted instances
-USE_DB_AUTHENTICATION=${FIRECRAWL_USE_DB_AUTHENTICATION:-false}
+USE_DB_AUTHENTICATION=$ENABLE_DB_AUTH
 
 # Supabase Configuration
-# For Docker network, use service name; for external access, use localhost:8300
-SUPABASE_URL=${SUPABASE_PUBLIC_URL:-http://supabase-kong:8000}
-SUPABASE_REPLICA_URL=${SUPABASE_REPLICA_URL:-${SUPABASE_URL:-http://supabase-kong:8000}}
+# For Docker network, use host.docker.internal to access Supabase on host machine
+# Supabase Kong is running on port 8300 on the host machine (from mydockers)
+SUPABASE_URL=http://host.docker.internal:8300
+SUPABASE_REPLICA_URL=http://host.docker.internal:8300
 SUPABASE_ANON_TOKEN=${ANON_KEY:-}
 SUPABASE_SERVICE_TOKEN=${SERVICE_ROLE_KEY:-}
 
@@ -131,12 +142,30 @@ echo ""
 echo "⚙️  Configuring Firecrawl..."
 
 # Load Supabase configuration from supabase-project/.env if exists
+# This ensures Firecrawl always uses the latest Supabase credentials
 if [ -f ../supabase-project/.env ]; then
     echo "📋 Loading Supabase configuration..."
     source ../supabase-project/.env
+    echo "✅ Supabase keys synchronized from supabase-project/.env"
+    
+    # Verify keys are available
+    if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_ROLE_KEY" ]; then
+        echo "⚠️  Warning: Supabase keys (ANON_KEY or SERVICE_ROLE_KEY) not found in supabase-project/.env"
+        echo "   Run ./start-supabase.sh first to generate the keys"
+    fi
+else
+    echo "⚠️  Supabase .env not found, Supabase features may not work"
+    echo "   Run ./start-supabase.sh first to initialize Supabase"
 fi
 
 # Create or update .env file with our custom configuration
+# Automatically enable DB authentication if Supabase keys are available
+if [ -n "$ANON_KEY" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+    ENABLE_DB_AUTH=${FIRECRAWL_USE_DB_AUTHENTICATION:-true}
+else
+    ENABLE_DB_AUTH=${FIRECRAWL_USE_DB_AUTHENTICATION:-false}
+fi
+
 cat > .env <<EOF
 # Port Configuration (external port, internal is 3002)
 PORT=${FIRECRAWL_PORT:-3003}
@@ -153,12 +182,13 @@ PLAYWRIGHT_MICROSERVICE_URL=http://playwright-service:3000/scrape
 # Database Configuration - Using Supabase for authentication
 # Note: Change tracking requires Supabase, so set to true if you want to use change tracking
 # Even with USE_DB_AUTHENTICATION=true, API keys are still optional for self-hosted instances
-USE_DB_AUTHENTICATION=${FIRECRAWL_USE_DB_AUTHENTICATION:-false}
+USE_DB_AUTHENTICATION=$ENABLE_DB_AUTH
 
 # Supabase Configuration
-# For Docker network, use service name; for external access, use localhost:8300
-SUPABASE_URL=${SUPABASE_PUBLIC_URL:-http://supabase-kong:8000}
-SUPABASE_REPLICA_URL=${SUPABASE_REPLICA_URL:-${SUPABASE_URL:-http://supabase-kong:8000}}
+# For Docker network, use host.docker.internal to access Supabase on host machine
+# Supabase Kong is running on port 8300 on the host machine (from mydockers)
+SUPABASE_URL=http://host.docker.internal:8300
+SUPABASE_REPLICA_URL=http://host.docker.internal:8300
 SUPABASE_ANON_TOKEN=${ANON_KEY:-}
 SUPABASE_SERVICE_TOKEN=${SERVICE_ROLE_KEY:-}
 

@@ -61,13 +61,17 @@ syncthing_data2/
 komodo-backups/
 komodo-periphery/
 
-# Firecrawl build caches
-firecrawl/**/node_modules/
-firecrawl/**/dist/
+# Ignore full external projects
+firecrawl/
+supabase/
 
-# Supabase local artifacts
+# Supabase local artifacts (fallback)
 supabase/**/node_modules/
 supabase/**/.turbo/
+
+# Firecrawl build caches (fallback)
+firecrawl/**/node_modules/
+firecrawl/**/dist/
 
 # Misc
 *.cache
