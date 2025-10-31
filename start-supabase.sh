@@ -49,6 +49,28 @@ fi
 # Navigate to supabase-project directory
 cd supabase-project
 
+# Apply Kong fix for missing DASHBOARD credentials if needed
+echo -e "${BLUE}🔧 Verifying Kong configuration fix...${NC}"
+if ! grep -q "DASHBOARD_USERNAME:-admin" docker-compose.yml 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  Applying Kong configuration fix...${NC}"
+    
+    # Backup original file
+    cp docker-compose.yml docker-compose.yml.backup 2>/dev/null || true
+    
+    # Apply fix using sed
+    sed -i 's|DASHBOARD_USERNAME: ${DASHBOARD_USERNAME}|DASHBOARD_USERNAME: ${DASHBOARD_USERNAME:-admin}|g' docker-compose.yml
+    sed -i 's|DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}|DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-admin}|g' docker-compose.yml
+    
+    # Fix entrypoint to export variables before processing template
+    if ! grep -q "export DASHBOARD_USERNAME" docker-compose.yml; then
+        sed -i "s|entrypoint: bash -c 'eval \"echo \\\\\\\"\\\$\\\$(cat ~/temp.yml)\\\\\\\"\\\" > ~/kong.yml|entrypoint: bash -c 'export DASHBOARD_USERNAME=\${DASHBOARD_USERNAME:-admin} DASHBOARD_PASSWORD=\${DASHBOARD_PASSWORD:-admin}; eval \"echo \\\\\\\"\\\$\\\$(cat ~/temp.yml)\\\\\\\"\\\" > ~/kong.yml|g" docker-compose.yml
+    fi
+    
+    echo -e "${GREEN}✓ Kong configuration fix applied${NC}"
+else
+    echo -e "${GREEN}✓ Kong configuration already fixed${NC}"
+fi
+
 # Generate supabase .env.example that documents variables from main .env
 echo -e "${BLUE}📝 Generating Supabase .env.example file...${NC}"
 cat > .env.example << 'EXAMPLE_EOF'
@@ -102,8 +124,8 @@ POSTGRES_PASSWORD=${SUPABASE_POSTGRES_PASSWORD}
 JWT_SECRET=${SUPABASE_JWT_SECRET}
 ANON_KEY=WILL_BE_GENERATED
 SERVICE_ROLE_KEY=WILL_BE_GENERATED
-DASHBOARD_USERNAME=${SUPABASE_DASHBOARD_USERNAME}
-DASHBOARD_PASSWORD=${SUPABASE_DASHBOARD_PASSWORD}
+DASHBOARD_USERNAME=${SUPABASE_DASHBOARD_USERNAME:-heavystack}
+DASHBOARD_PASSWORD=${SUPABASE_DASHBOARD_PASSWORD:-changeme}
 SECRET_KEY_BASE=${SUPABASE_SECRET_KEY_BASE}
 VAULT_ENC_KEY=${SUPABASE_VAULT_ENC_KEY}
 PG_META_CRYPTO_KEY=${SUPABASE_PG_META_CRYPTO_KEY}
@@ -147,7 +169,7 @@ PGRST_DB_SCHEMAS=public,storage,graphql_public
 SITE_URL=${SUPABASE_SITE_URL}
 ADDITIONAL_REDIRECT_URLS=
 JWT_EXPIRY=3600
-DISABLE_SIGNUP=false
+DISABLE_SIGNUP=${SUPABASE_DISABLE_SIGNUP:-false}
 API_EXTERNAL_URL=http://localhost:${SUPABASE_KONG_HTTP_PORT}
 
 ## Mailer Config
@@ -157,19 +179,19 @@ MAILER_URLPATHS_RECOVERY="/auth/v1/verify"
 MAILER_URLPATHS_EMAIL_CHANGE="/auth/v1/verify"
 
 ## Email auth
-ENABLE_EMAIL_SIGNUP=true
-ENABLE_EMAIL_AUTOCONFIRM=false
+ENABLE_EMAIL_SIGNUP=${SUPABASE_ENABLE_EMAIL_SIGNUP:-true}
+ENABLE_EMAIL_AUTOCONFIRM=${SUPABASE_ENABLE_EMAIL_AUTOCONFIRM:-false}
 SMTP_ADMIN_EMAIL=admin@example.com
 SMTP_HOST=${SUPABASE_SMTP_HOST}
 SMTP_PORT=${SUPABASE_SMTP_PORT}
 SMTP_USER=${SUPABASE_SMTP_USER}
 SMTP_PASS=${SUPABASE_SMTP_PASS}
 SMTP_SENDER_NAME=fake_sender
-ENABLE_ANONYMOUS_USERS=false
+ENABLE_ANONYMOUS_USERS=${SUPABASE_ENABLE_ANONYMOUS_USERS:-false}
 
 ## Phone auth
-ENABLE_PHONE_SIGNUP=true
-ENABLE_PHONE_AUTOCONFIRM=true
+ENABLE_PHONE_SIGNUP=${SUPABASE_ENABLE_PHONE_SIGNUP:-true}
+ENABLE_PHONE_AUTOCONFIRM=${SUPABASE_ENABLE_PHONE_AUTOCONFIRM:-true}
 
 ############
 # Studio
