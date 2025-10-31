@@ -1,19 +1,73 @@
-# Environment files
-.env
-
-# Supabase
-supabase/
-supabase-project/.env
-supabase-project/volumes/
-
-# Firecrawl
-firecrawl/
-!firecrawl/.env.example
-
-# Data directories
-notebook_data/
-surreal_data/
-configs/
+# General OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
 
 # Logs
 *.log
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+node_modules/
+.pnpm-store/
+
+# Envs (keep examples)
+.env
+.env.*
+!.env.example
+!supabase-project/.env.example
+
+# Backups/temp
+*.backup
+*.backup*
+*.bak
+*.tmp
+*.temp
+
+# Certificates/keys
+*.pem
+*.crt
+*.key
+
+# Databases
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# Docker artifacts
+**/docker-data/
+**/volumes/
+
+# Project data directories (large/runtime)
+configs/
+data/
+downloads/
+media/
+nextcloud_data/
+nextcloud_mount/
+notebook_data/
+portracker-data/
+surreal_data/
+syncthing_data1/
+syncthing_data2/
+komodo-backups/
+komodo-periphery/
+
+# Firecrawl build caches
+firecrawl/**/node_modules/
+firecrawl/**/dist/
+
+# Supabase local artifacts
+supabase/**/node_modules/
+supabase/**/.turbo/
+
+# Misc
+*.cache

@@ -264,19 +264,28 @@
                             name: 'Infraestrutura',
                             icon: '🔧',
                             services: [
-                                { name: 'Portainer', description: 'Gerenciamento de containers Docker', port: '9000', url: 'http://localhost:9000' },
-                                { name: 'Portainer Agent', description: 'Agente do Portainer para gerenciamento remoto', port: '9001', url: 'http://localhost:9001' },
                                 { name: 'Vaultwarden', description: 'Gerenciador de senhas auto-hospedado', port: '8100', url: 'http://localhost:8100' },
-                                { name: 'Homepage', description: 'Dashboard centralizado', port: '3000', url: 'http://localhost:3000' },
-                                { name: 'Uptime Kuma', description: 'Monitoramento de uptime', port: '3001', url: 'http://localhost:3001' },
-                                { name: 'Nextcloud AIO', description: 'Nuvem privada completa (HTTP)', port: '8090', url: 'http://localhost:8090' },
+                                { name: 'Uptime Kuma', description: 'Monitoramento de uptime e status', port: '3001', url: 'http://localhost:3001' },
+                                { name: 'Nextcloud AIO', description: 'Nuvem privada completa (Standalone Mode)', port: '8090', url: 'http://localhost:8090' },
                                 { name: 'Nextcloud Admin', description: 'Painel admin do Nextcloud AIO (HTTPS)', port: '8888', url: 'https://localhost:8888' },
-                                { name: 'Nextcloud Web', description: 'Interface Nextcloud (HTTPS)', port: '8443', url: 'http://localhost:8443' },
-                                { name: 'Open Notebook', description: 'Notebook AI com OpenAI', port: '8502', url: 'http://localhost:8502' },
-                                { name: 'Open Notebook API', description: 'API do Open Notebook', port: '5056', url: 'http://localhost:5056' },
-                                { name: 'Supabase Studio', description: 'Backend as a Service - Dashboard', port: '8300', url: 'http://localhost:8300' },
-                                { name: 'Supabase API', description: 'Backend as a Service - REST/Auth/Storage APIs', port: '8300', url: 'http://localhost:8300/rest/v1/' },
-                                { name: 'Supabase Database', description: 'PostgreSQL com Supavisor pooling', port: '5434', url: 'postgresql://localhost:5434' },
+                                { name: 'Nextcloud Web', description: 'Interface Nextcloud (HTTPS - Apache 443)', port: '8443', url: 'http://localhost:8443' },
+                                { name: 'Portracker', description: 'Container Port Tracker', port: '4999', url: 'http://localhost:4999' },
+                                { name: 'Pi-hole', description: 'Network-wide ad blocking DNS', port: '80', url: 'http://localhost:80' },
+                                { name: 'Pi-hole HTTPS', description: 'Pi-hole web interface (HTTPS)', port: '443', url: 'https://localhost:443' },
+                                { name: 'Pi-hole DNS', description: 'DNS server (TCP/UDP)', port: '53', url: 'dns://localhost:53' },
+                            ]
+                        },
+                        {
+                            name: 'Supabase',
+                            icon: '🗄️',
+                            services: [
+                                { name: 'Supabase Studio', description: 'Dashboard e interface do Supabase', port: '8300', url: 'http://localhost:8300' },
+                                { name: 'Supabase Kong', description: 'API Gateway (HTTP)', port: '8300', url: 'http://localhost:8300' },
+                                { name: 'Supabase Kong HTTPS', description: 'API Gateway (HTTPS)', port: '8344', url: 'https://localhost:8344' },
+                                { name: 'Supabase Pooler', description: 'Connection pooler para PostgreSQL', port: '6543', url: 'postgresql://localhost:6543' },
+                                { name: 'Supabase Database', description: 'PostgreSQL (direct)', port: '5434', url: 'postgresql://localhost:5434' },
+                                { name: 'Supabase Analytics', description: 'Analytics e logs', port: '4000', url: 'http://localhost:4000' },
+                                { name: 'Supabase Realtime', description: 'Realtime subscriptions', port: '8300', url: 'http://localhost:8300/realtime/v1/' },
                             ]
                         },
                         {
@@ -285,14 +294,19 @@
                             services: [
                                 { name: 'Open WebUI', description: 'Interface web para modelos de IA', port: '3002', url: 'http://localhost:3002' },
                                 { name: 'Ollama', description: 'Servidor local de modelos de IA', port: '11434', url: 'http://localhost:11434' },
+                                { name: 'Open Notebook', description: 'Notebook AI com OpenAI', port: '8502', url: 'http://localhost:8502' },
+                                { name: 'Open Notebook API', description: 'API do Open Notebook', port: '5056', url: 'http://localhost:5056' },
                             ]
                         },
                         {
                             name: 'Web Scraping',
                             icon: '🕷️',
                             services: [
-                                { name: 'Firecrawl API', description: 'API de web scraping com Playwright', port: '3003', url: 'http://localhost:3003' },
+                                { name: 'Firecrawl API', description: 'API de web scraping com Playwright e Supabase', port: '3003', url: 'http://localhost:3003' },
                                 { name: 'Firecrawl Queue Manager', description: 'Gerenciador de filas do Firecrawl', port: '3003', url: 'http://localhost:3003/admin/CHANGEME/queues' },
+                                { name: 'Browserless', description: 'Chrome browser API para web scraping', port: '3000', url: 'http://localhost:3000' },
+                                { name: 'Changedetection.io', description: 'Monitoramento de mudanças em websites', port: '5000', url: 'http://localhost:5000' },
+                                { name: 'Apprise', description: 'Serviço de notificações', port: '8000', url: 'http://localhost:8000' },
                             ]
                         },
                         {
@@ -303,10 +317,12 @@
                                 { name: 'Jellyseerr', description: 'Interface de requisições de mídia', port: '5055', url: 'http://localhost:5055' },
                                 { name: 'Bazarr', description: 'Gerenciador de legendas', port: '6767', url: 'http://localhost:6767' },
                                 { name: 'Prowlarr', description: 'Indexador de torrents', port: '9696', url: 'http://localhost:9696' },
-                                { name: 'qBittorrent', description: 'Cliente de torrents', port: '8080', url: 'http://localhost:8080' },
+                                { name: 'qBittorrent', description: 'Cliente de torrents (Web UI)', port: '8080', url: 'http://localhost:8080' },
+                                { name: 'qBittorrent Torrent', description: 'Cliente de torrents (Torrent port)', port: '6881', url: 'http://localhost:6881' },
                                 { name: 'Radarr', description: 'Gerenciador de filmes', port: '7878', url: 'http://localhost:7878' },
                                 { name: 'Sonarr', description: 'Gerenciador de séries', port: '8989', url: 'http://localhost:8989' },
                                 { name: 'Lidarr', description: 'Gerenciador de música', port: '8686', url: 'http://localhost:8686' },
+                                { name: 'FlareSolverr', description: 'Solver de Cloudflare challenges', port: '8191', url: 'http://localhost:8191' },
                             ]
                         },
                         {
@@ -315,6 +331,55 @@
                             services: [
                                 { name: 'Duplicati', description: 'Backup automatizado', port: '8200', url: 'http://localhost:8200' },
                                 { name: 'Syncthing', description: 'Sincronização de arquivos P2P', port: '8384', url: 'http://localhost:8384' },
+                            ]
+                        },
+                        {
+                            name: 'Komodo',
+                            icon: '🦎',
+                            services: [
+                                { name: 'Komodo Core', description: 'Core do Komodo', port: '9120', url: 'http://localhost:9120' },
+                                { name: 'Komodo MongoDB', description: 'MongoDB do Komodo', port: '27017', url: 'mongodb://localhost:27017' },
+                                { name: 'Komodo Periphery', description: 'Periphery do Komodo', port: '8120', url: 'http://localhost:8120' },
+                            ]
+                        },
+                        {
+                            name: 'Netvisor',
+                            icon: '👁️',
+                            services: [
+                                { name: 'Netvisor Server', description: 'Servidor do Netvisor', port: '60072', url: 'http://localhost:60072' },
+                                { name: 'Netvisor Daemon', description: 'Daemon do Netvisor', port: '60073', url: 'http://localhost:60073' },
+                                { name: 'Netvisor Postgres', description: 'PostgreSQL do Netvisor', port: '5432', url: 'postgresql://localhost:5432' },
+                            ]
+                        },
+                        {
+                            name: 'Firecrawl Components',
+                            icon: '⚙️',
+                            services: [
+                                { name: 'Firecrawl API', description: 'API principal do Firecrawl (com Supabase RR)', port: '3003', url: 'http://localhost:3003' },
+                                { name: 'Firecrawl PostgreSQL', description: 'PostgreSQL interno do Firecrawl (NuQ)', port: '5433', url: 'postgresql://localhost:5433' },
+                                { name: 'Firecrawl Redis', description: 'Redis para filas do Firecrawl', port: '6379', url: 'redis://localhost:6379' },
+                                { name: 'Firecrawl Playwright', description: 'Serviço Playwright do Firecrawl', port: 'Internal', url: 'Internal' },
+                                { name: 'Firecrawl Blocklist', description: 'Blocklist no Supabase (public.blocklist)', port: 'Supabase', url: 'Supabase Database' },
+                            ]
+                        },
+                        {
+                            name: 'Supabase Internal Services',
+                            icon: '🔐',
+                            services: [
+                                { name: 'Supabase Auth', description: 'Autenticação GoTrue', port: '8300', url: 'http://localhost:8300/auth/v1/' },
+                                { name: 'Supabase Storage', description: 'Storage API', port: '8300', url: 'http://localhost:8300/storage/v1/' },
+                                { name: 'Supabase REST', description: 'PostgREST API', port: '8300', url: 'http://localhost:8300/rest/v1/' },
+                                { name: 'Supabase Meta', description: 'Postgres Meta', port: 'Internal', url: 'Internal' },
+                                { name: 'Supabase Imgproxy', description: 'Image proxy', port: 'Internal', url: 'Internal' },
+                                { name: 'Supabase Edge Functions', description: 'Edge functions runtime', port: 'Internal', url: 'Internal' },
+                                { name: 'Supabase Vector', description: 'Vector logs aggregator', port: 'Internal', url: 'Internal' },
+                            ]
+                        },
+                        {
+                            name: 'Databases',
+                            icon: '💾',
+                            services: [
+                                { name: 'Lumenback PostgreSQL', description: 'PostgreSQL com pgvector', port: '5432', url: 'postgresql://localhost:5432' },
                             ]
                         }
                     ]

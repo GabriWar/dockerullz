@@ -350,7 +350,7 @@ services:
     image: supabase/logflare:1.22.6
     restart: unless-stopped
     ports:
-      - 4000:4000
+      - ${ANALYTICS_PORT:-4000}:4000
     # Uncomment to use Big Query backend for analytics
     # volumes:
     #   - type: bind
@@ -434,8 +434,8 @@ services:
         condition: service_healthy
     environment:
       POSTGRES_HOST: /var/run/postgresql
-      PGPORT: ${POSTGRES_PORT}
-      POSTGRES_PORT: ${POSTGRES_PORT}
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
       PGPASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PGDATABASE: ${POSTGRES_DB}
@@ -487,7 +487,7 @@ services:
     image: supabase/supavisor:2.7.3
     restart: unless-stopped
     ports:
-      - ${POSTGRES_PORT}:5432
+      - ${POSTGRES_PORT_EXTERNAL:-5434}:5432
       - ${POOLER_PROXY_PORT_TRANSACTION}:6543
     volumes:
       - ./volumes/pooler/pooler.exs:/etc/pooler/pooler.exs:ro,z

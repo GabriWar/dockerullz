@@ -1,29 +1,34 @@
 name: HeavyStack
 
-services:
-  # Portainer CE
-  portainer:
-    ports:
-      - 9000:9000
-    container_name: portainer
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
-    image: portainer/portainer-ce:latest
+x-netvisor-env: &netvisor-env
+  NETVISOR_LOG_LEVEL: ${NETVISOR_LOG_LEVEL:-info}
+  NETVISOR_SERVER_PORT: ${NETVISOR_SERVER_PORT:-60072}
+  NETVISOR_DAEMON_PORT: ${NETVISOR_DAEMON_PORT:-60073}
 
-  # Portainer Agent
-  portainer_agent:
-    image: portainer/agent:latest
-    container_name: portainer_agent
-    restart: always
-    ports:
-      - 9001:9001
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/volumes:/var/lib/docker/volumes
-    environment:
-      - AGENT_SECRET=${AGENT_SECRET}
+services:
+  # Portainer CE (Commented out)
+  # portainer:
+  #   ports:
+  #     - 9000:9000
+  #   container_name: portainer
+  #   restart: always
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - portainer_data:/data
+  #   image: portainer/portainer-ce:latest
+
+  # Portainer Agent (Commented out)
+  # portainer_agent:
+  #   image: portainer/agent:latest
+  #   container_name: portainer_agent
+  #   restart: always
+  #   ports:
+  #     - 9001:9001
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - /var/lib/docker/volumes:/var/lib/docker/volumes
+  #   environment:
+  #     - AGENT_SECRET=${AGENT_SECRET}
 
   # Vaultwarden
   vaultwarden:
@@ -40,64 +45,22 @@ services:
     volumes:
       - vaultwarden_data:/data
 
-  # Netdata (Commented out - network_mode: host conflicts with other services)
-  # netdata:
-  #   image: netdata/netdata
-  #   container_name: netdata
-  #   pid: host
-  #   network_mode: host
-  #   restart: unless-stopped
-  #   cap_add:
-  #     - SYS_PTRACE
-  #     - SYS_ADMIN
-  #   security_opt:
-  #     - apparmor:unconfined
-  #   volumes:
-  #     - netdataconfig:/etc/netdata
-  #     - netdatalib:/var/lib/netdata
-  #     - netdatacache:/var/cache/netdata
-  #     - /:/host/root:ro,rslave
-  #     - /etc/passwd:/host/etc/passwd:ro
-  #     - /etc/group:/host/etc/group:ro
-  #     - /etc/localtime:/etc/localtime:ro
-  #     - /proc:/host/proc:ro
-  #     - /sys:/host/sys:ro
-  #     - /etc/os-release:/host/etc/os-release:ro
-  #     - /var/log:/host/var/log:ro
-  #     - /var/run/docker.sock:/var/run/docker.sock:ro
-  #     - /run/dbus:/run/dbus:ro
-
-  # n8n (Commented out - had startup issues)
-  # n8n:
-  #   ports:
-  #     - 5678:5678
-  #   container_name: n8n
-  #   restart: unless-stopped
-  #   image: docker.n8n.io/n8nio/n8n
-  #   environment:
-  #     - GENERIC_TIMEZONE=${N8N_TIMEZONE}
-  #     - TZ=${N8N_TIMEZONE}
-  #     - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
-  #     - N8N_RUNNERS_ENABLED=true
-  #   volumes:
-  #     - n8n_data:/home/node/.n8n
-
   # NOTE: Jellyfin and Media Stack services (Jellyseerr, Sonarr, Radarr, Prowlarr, FlareSolverr, qBittorrent)
   # are now in docker-compose.sudo.yml due to permission requirements
   # Start them with: ./start-sudo.sh
 
-  # Homepage
-  homepage:
-    image: ghcr.io/gethomepage/homepage:latest
-    container_name: homepage
-    ports:
-      - 3000:3000
-    volumes:
-      - ./configs/homepage:/app/config
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
-    restart: unless-stopped
+  # Homepage (Commented out)
+  # homepage:
+  #   image: ghcr.io/gethomepage/homepage:latest
+  #   container_name: homepage
+  #   ports:
+  #     - 3000:3000
+  #   volumes:
+  #     - ./configs/homepage:/app/config
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   environment:
+  #     - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
+  #   restart: unless-stopped
 
   # Uptime Kuma
   uptime-kuma:
@@ -123,8 +86,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
     environment:
-      - APACHE_PORT=11000
+      # Standalone mode (no reverse proxy) - Apache listens on port 443
       - APACHE_IP_BINDING=0.0.0.0
+      - APACHE_PORT=443
+      - SKIP_DOMAIN_VALIDATION=true
       # Nextcloud AIO data directory (where Nextcloud files are stored)
       - NEXTCLOUD_DATADIR=${NEXTCLOUD_DATADIR}
       # Backup location for Nextcloud AIO (borg backups)
@@ -228,27 +193,28 @@ services:
   #     - 8787:8787
   #   restart: unless-stopped
 
-  # Lidarr
-  lidarr:
-    image: lscr.io/linuxserver/lidarr:latest
-    container_name: lidarr
-    hostname: lidarr
-    networks:
-      - mediarr
-    environment:
-      - PUID=${LIDARR_PUID}
-      - PGID=${LIDARR_PGID}
-      - TZ=${LIDARR_TZ}
-    volumes:
-      - ./configs/mediarr/lidarr:/config
-      - myMedia:/mnt/media
-      - myDlFolders:/mnt/downloads
-    depends_on:
-      - prowlarr
-      - qbittorrent
-    ports:
-      - 8686:8686
-    restart: unless-stopped
+  # Lidarr (Commented out - depends on prowlarr and qbittorrent which are in docker-compose.sudo.yml)
+  # Start with: ./start-sudo.sh
+  # lidarr:
+  #   image: lscr.io/linuxserver/lidarr:latest
+  #   container_name: lidarr
+  #   hostname: lidarr
+  #   networks:
+  #     - mediarr
+  #   environment:
+  #     - PUID=${LIDARR_PUID}
+  #     - PGID=${LIDARR_PGID}
+  #     - TZ=${LIDARR_TZ}
+  #   volumes:
+  #     - ./configs/mediarr/lidarr:/config
+  #     - myMedia:/mnt/media
+  #     - myDlFolders:/mnt/downloads
+  #   depends_on:
+  #     - prowlarr
+  #     - qbittorrent
+  #   ports:
+  #     - 8686:8686
+  #   restart: unless-stopped
 
   # Ollama
   ollama:
@@ -285,79 +251,253 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
 
-  # Firecrawl - Web Scraping API (Commented out - requires building from source, not available as stable pre-built image)
-  # To use Firecrawl: clone https://github.com/mendableai/firecrawl and run docker compose build
-  # firecrawl-postgres:
-  #   image: postgres:15-alpine
-  #   container_name: firecrawl-postgres
-  #   networks:
-  #     - firecrawl
-  #   environment:
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=postgres
-  #     - POSTGRES_DB=postgres
-  #   volumes:
-  #     - firecrawl_postgres_data:/var/lib/postgresql/data
-  #   restart: unless-stopped
+  daemon:
+    image: mayanayza/netvisor-daemon:latest
+    container_name: netvisor-daemon
+    network_mode: host
+    privileged: true
+    restart: unless-stopped
+    environment:
+      <<: *netvisor-env
+      NETVISOR_SERVER_TARGET: ${NETVISOR_SERVER_TARGET:-http://127.0.0.1}
+      NETVISOR_PORT: ${NETVISOR_DAEMON_PORT:-60073}
+      NETVISOR_BIND_ADDRESS: ${NETVISOR_BIND_ADDRESS:-0.0.0.0}
+      NETVISOR_NAME: ${NETVISOR_NAME:-netvisor-daemon}
+      NETVISOR_HEARTBEAT_INTERVAL: ${NETVISOR_HEARTBEAT_INTERVAL:-30}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${NETVISOR_DAEMON_PORT:-60073}/api/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - daemon-config:/root/.config/netvisor/daemon
+      # Comment out the line below to disable docker discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
-  # firecrawl-redis:
-  #   image: redis:alpine
-  #   container_name: firecrawl-redis
-  #   networks:
-  #     - firecrawl
-  #   volumes:
-  #     - firecrawl_redis_data:/data
-  #   restart: unless-stopped
-  #   command: redis-server --bind 0.0.0.0
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: netvisor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - netvisor
 
-  # firecrawl-playwright:
-  #   image: ghcr.io/firecrawl/playwright-service:latest
-  #   container_name: firecrawl-playwright
-  #   networks:
-  #     - firecrawl
-  #   environment:
-  #     - PORT=3000
-  #     - PROXY_SERVER=${FIRECRAWL_PROXY_SERVER:-}
-  #     - PROXY_USERNAME=${FIRECRAWL_PROXY_USERNAME:-}
-  #     - PROXY_PASSWORD=${FIRECRAWL_PROXY_PASSWORD:-}
-  #     - BLOCK_MEDIA=${FIRECRAWL_BLOCK_MEDIA:-false}
-  #   restart: unless-stopped
+  server:
+    image: mayanayza/netvisor-server:latest
+    ports:
+      - "${NETVISOR_SERVER_PORT:-60072}:${NETVISOR_SERVER_PORT:-60072}"
+    environment:
+      <<: *netvisor-env
+      NETVISOR_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/netvisor
+      NETVISOR_WEB_EXTERNAL_PATH: /app/static
+      # 172.17.0.1 is Docker's default bridge gateway. If your's is different, make sure to change it.
+      NETVISOR_INTEGRATED_DAEMON_URL: http://172.17.0.1:${NETVISOR_DAEMON_PORT:-60073}
+    volumes:
+      - ./data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      daemon:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - netvisor
 
-  # firecrawl-api:
-  #   image: ghcr.io/firecrawl/firecrawl:latest
-  #   container_name: firecrawl-api
-  #   networks:
-  #     - firecrawl
-  #   ports:
-  #     - ${FIRECRAWL_PORT:-3003}:3002
-  #   environment:
-  #     - HOST=0.0.0.0
-  #     - PORT=3002
-  #     - REDIS_URL=redis://firecrawl-redis:6379
-  #     - REDIS_RATE_LIMIT_URL=redis://firecrawl-redis:6379
-  #     - PLAYWRIGHT_MICROSERVICE_URL=http://firecrawl-playwright:3000/scrape
-  #     - NUQ_DATABASE_URL=postgres://postgres:postgres@firecrawl-postgres:5432/postgres
-  #     - USE_DB_AUTHENTICATION=${FIRECRAWL_USE_DB_AUTHENTICATION:-false}
-  #     - BULL_AUTH_KEY=${FIRECRAWL_BULL_AUTH_KEY:-CHANGEME}
-  #     - OPENAI_API_KEY=${FIRECRAWL_OPENAI_API_KEY:-}
-  #     - OPENAI_BASE_URL=${FIRECRAWL_OPENAI_BASE_URL:-}
-  #     - MODEL_NAME=${FIRECRAWL_MODEL_NAME:-}
-  #     - OLLAMA_BASE_URL=${FIRECRAWL_OLLAMA_BASE_URL:-}
-  #     - SEARXNG_ENDPOINT=${FIRECRAWL_SEARXNG_ENDPOINT:-}
-  #     - PROXY_SERVER=${FIRECRAWL_PROXY_SERVER:-}
-  #     - PROXY_USERNAME=${FIRECRAWL_PROXY_USERNAME:-}
-  #     - PROXY_PASSWORD=${FIRECRAWL_PROXY_PASSWORD:-}
-  #   depends_on:
-  #     - firecrawl-postgres
-  #     - firecrawl-redis
-  #     - firecrawl-playwright
-  #   restart: unless-stopped
-  #   ulimits:
-  #     nofile:
-  #       soft: 65535
-  #       hard: 65535
-  #   extra_hosts:
-  #     - "host.docker.internal:host-gateway"
+  # Apprise - Notification Service API
+  apprise:
+    image: caronc/apprise:latest
+    container_name: apprise
+    ports:
+      - "${APPRISE_PORT:-8000}:8000"
+    environment:
+      - PUID=${APPRISE_PUID:-1000}
+      - PGID=${APPRISE_PGID:-1000}
+      - APPRISE_STATEFUL_MODE=${APPRISE_STATEFUL_MODE:-simple}
+      - APPRISE_WORKER_COUNT=${APPRISE_WORKER_COUNT:-1}
+      - TZ=${APPRISE_TZ:-America/Sao_Paulo}
+    volumes:
+      - ./configs/apprise:/config
+      - ./configs/apprise/plugin:/plugin
+      - ./configs/apprise/attach:/attach
+    restart: unless-stopped
+
+  # Browserless - Chrome browser API for web scraping (used by changedetection)
+  browserless:
+    image: dgtlmoon/sockpuppetbrowser:latest
+    container_name: browserless
+    hostname: browserless
+    ports:
+      - "${BROWSERLESS_PORT:-3000}:3000"
+    environment:
+      - DEFAULT_LAUNCH_ARGS=["--window-size=1920,1080"]
+    volumes:
+      - /dev/shm:/dev/shm
+    cap_add:
+      - SYS_ADMIN
+    restart: unless-stopped
+
+  # Changedetection.io - Monitor websites for changes
+  changedetection:
+    image: ghcr.io/dgtlmoon/changedetection.io:latest
+    container_name: changedetection
+    hostname: changedetection
+    ports:
+      - "${CHANGEDETECTION_PORT:-5000}:5000"
+    environment:
+      - PORT=${CHANGEDETECTION_PORT:-5000}
+      - LOGGER_LEVEL=${CHANGEDETECTION_LOG_LEVEL:-DEBUG}
+      - PLAYWRIGHT_DRIVER_URL=ws://browserless:3000
+      - FETCH_WORKERS=${CHANGEDETECTION_FETCH_WORKERS:-10}
+      - MINIMUM_SECONDS_RECHECK_TIME=${CHANGEDETECTION_MIN_RECHECK:-3}
+      - TZ=${CHANGEDETECTION_TZ:-America/Sao_Paulo}
+      - BASE_URL=${CHANGEDETECTION_BASE_URL:-http://localhost:5000}
+      - HIDE_REFERER=${CHANGEDETECTION_HIDE_REFERER:-false}
+      - DISABLE_VERSION_CHECK=${CHANGEDETECTION_DISABLE_VERSION_CHECK:-false}
+      - ALLOW_FILE_URI=${CHANGEDETECTION_ALLOW_FILE_URI:-False}
+    volumes:
+      - changedetection_data:/datastore
+      # Uncomment to use custom proxy configuration
+      # - ./configs/changedetection/proxies.json:/datastore/proxies.json
+    depends_on:
+      - browserless
+    restart: unless-stopped
+
+  # Komodo - MongoDB
+  komodo-mongo:
+    image: mongo:latest
+    container_name: komodo-mongo
+    labels:
+      komodo.skip: ""
+    command: --quiet --wiredTigerCacheSizeGB 0.25
+    restart: unless-stopped
+    # Uncomment to expose MongoDB port
+    # ports:
+    #   - "${KOMODO_MONGO_PORT:-27017}:27017"
+    volumes:
+      - komodo_mongo_data:/data/db
+      - komodo_mongo_config:/data/configdb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${KOMODO_DB_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${KOMODO_DB_PASSWORD:-password}
+    networks:
+      - komodo
+
+  # Komodo Core
+  komodo-core:
+    image: ghcr.io/moghtech/komodo-core:${KOMODO_IMAGE_TAG:-latest}
+    container_name: komodo-core
+    labels:
+      komodo.skip: ""
+    restart: unless-stopped
+    depends_on:
+      - komodo-mongo
+    ports:
+      - "${KOMODO_CORE_PORT:-9120}:9120"
+    environment:
+      KOMODO_DATABASE_ADDRESS: komodo-mongo:27017
+      KOMODO_DATABASE_USERNAME: ${KOMODO_DB_USERNAME:-root}
+      KOMODO_DATABASE_PASSWORD: ${KOMODO_DB_PASSWORD:-password}
+      KOMODO_HOST: ${KOMODO_HOST:-http://localhost:9120}
+      KOMODO_LOCAL_AUTH: ${KOMODO_LOCAL_AUTH:-true}
+      KOMODO_INIT_ADMIN_USERNAME: ${KOMODO_INIT_ADMIN_USERNAME:-admin}
+      KOMODO_INIT_ADMIN_PASSWORD: ${KOMODO_INIT_ADMIN_PASSWORD:-changeme}
+      KOMODO_ENABLE_NEW_USERS: ${KOMODO_ENABLE_NEW_USERS:-true}
+      KOMODO_PASSKEY: ${KOMODO_PASSKEY:-default-passkey-changeme}
+      KOMODO_JWT_SECRET: ${KOMODO_JWT_SECRET:-}
+      KOMODO_TITLE: ${KOMODO_TITLE:-Komodo}
+      KOMODO_FIRST_SERVER: ${KOMODO_FIRST_SERVER:-http://komodo-periphery:8120}
+      KOMODO_FIRST_SERVER_NAME: ${KOMODO_FIRST_SERVER_NAME:-Local}
+    volumes:
+      - ${KOMODO_BACKUPS_PATH:-./komodo-backups}:/backups
+      # Uncomment to mount sync files
+      # - ${KOMODO_SYNC_PATH:-./komodo-syncs}:/syncs
+      # Uncomment to mount custom config file
+      # - ${KOMODO_CONFIG_PATH:-./configs/komodo/core.config.toml}:/config/core.config.toml
+    networks:
+      - komodo
+
+  # Komodo Periphery
+  komodo-periphery:
+    image: ghcr.io/moghtech/komodo-periphery:${KOMODO_IMAGE_TAG:-latest}
+    container_name: komodo-periphery
+    labels:
+      komodo.skip: ""
+    restart: unless-stopped
+    privileged: true
+    environment:
+      PERIPHERY_PASSKEYS: ${KOMODO_PASSKEY:-default-passkey-changeme}
+      PERIPHERY_SSL_ENABLED: ${KOMODO_PERIPHERY_SSL_ENABLED:-false}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/proc
+      - ${KOMODO_PERIPHERY_ROOT:-./komodo-periphery}:/etc/komodo
+    networks:
+      - komodo
+
+  # Portracker - Container Port Tracker
+  portracker:
+    image: mostafawahied/portracker:latest
+    container_name: portracker
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./portracker-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DATABASE_PATH=/data/portracker.db
+      - PORT=${PORTracker_PORT:-4999}
+      # Optional: For enhanced TrueNAS features
+      # - TRUENAS_API_KEY=${PORTracker_TRUENAS_API_KEY:-}
+
+  # Pi-hole - Network-wide ad blocking
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      # DNS Ports
+      - "${PIHOLE_DNS_PORT:-53}:53/tcp"
+      - "${PIHOLE_DNS_PORT:-53}:53/udp"
+      # Default HTTP Port
+      - "${PIHOLE_HTTP_PORT:-80}:80/tcp"
+      # Default HTTPS Port. FTL will generate a self-signed certificate
+      - "${PIHOLE_HTTPS_PORT:-443}:443/tcp"
+      # Uncomment the line below if you are using Pi-hole as your DHCP server
+      # - "${PIHOLE_DHCP_PORT:-67}:67/udp"
+      # Uncomment the line below if you are using Pi-hole as your NTP server
+      # - "${PIHOLE_NTP_PORT:-123}:123/udp"
+    environment:
+      # Set the appropriate timezone for your location
+      TZ: ${PIHOLE_TZ:-America/Sao_Paulo}
+      # Set a password to access the web interface. Not setting one will result in a random password being assigned
+      FTLCONF_webserver_api_password: ${PIHOLE_WEBPASSWORD:-}
+      # If using Docker's default `bridge` network setting the dns listening mode should be set to 'all'
+      FTLCONF_dns_listeningMode: ${PIHOLE_DNS_LISTENING_MODE:-all}
+      # Web interface port (internal)
+      WEBPORT: ${PIHOLE_WEBPORT:-80}
+      # DNS port (internal)
+      DNSMASQ_LISTENING: ${PIHOLE_DNSMASQ_LISTENING:-all}
+    volumes:
+      # For persisting Pi-hole's databases and common configuration file
+      - ./configs/pihole:/etc/pihole
+      # Uncomment the below if you have custom dnsmasq config files that you want to persist
+      # - ./configs/pihole-dnsmasq:/etc/dnsmasq.d
+    cap_add:
+      # Required if you are using Pi-hole as your DHCP server, else not needed
+      - NET_ADMIN
+      # Required if you are using Pi-hole as your NTP client to be able to set the host's system time
+      - SYS_TIME
+      # Optional, if Pi-hole should get some more processing time
+      - SYS_NICE
+    restart: unless-stopped
 
 networks:
   duplicati:
@@ -365,6 +505,14 @@ networks:
   mediarr:
     driver: bridge
   firecrawl:
+    driver: bridge
+  netvisor:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.0.0/16
+          gateway: 172.31.0.1
+  komodo:
     driver: bridge
 
 volumes:
@@ -387,3 +535,8 @@ volumes:
   myDlFolders:
     external: true
     name: heavystack_myDlFolders
+  postgres_data:
+  daemon-config:
+  changedetection_data:
+  komodo_mongo_data:
+  komodo_mongo_config:

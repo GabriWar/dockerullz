@@ -22,8 +22,88 @@ if [ -d "$FIRECRAWL_DIR" ]; then
     read -p "Do you want to rebuild? (y/n): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Skipping rebuild. Starting existing containers..."
+        echo "Skipping rebuild. Regenerating .env and starting existing containers..."
         cd "$FIRECRAWL_DIR"
+
+        # Always regenerate .env to ensure it's up to date
+        echo "⚙️  Regenerating Firecrawl configuration..."
+        
+        # Load Supabase configuration from supabase-project/.env if exists
+        if [ -f ../supabase-project/.env ]; then
+            echo "📋 Loading Supabase configuration..."
+            source ../supabase-project/.env
+        fi
+        
+        # Regenerate .env file with updated variables
+        cat > .env <<EOF
+# Port Configuration (external port, internal is 3002)
+PORT=${FIRECRAWL_PORT:-3003}
+INTERNAL_PORT=3002
+HOST=0.0.0.0
+
+# Redis Configuration
+REDIS_URL=redis://redis:6379
+REDIS_RATE_LIMIT_URL=redis://redis:6379
+
+# Playwright Service
+PLAYWRIGHT_MICROSERVICE_URL=http://playwright-service:3000/scrape
+
+# Database Configuration - Using Supabase for authentication
+# Note: Change tracking requires Supabase, so set to true if you want to use change tracking
+# Even with USE_DB_AUTHENTICATION=true, API keys are still optional for self-hosted instances
+USE_DB_AUTHENTICATION=${FIRECRAWL_USE_DB_AUTHENTICATION:-false}
+
+# Supabase Configuration
+# For Docker network, use service name; for external access, use localhost:8300
+SUPABASE_URL=${SUPABASE_PUBLIC_URL:-http://supabase-kong:8000}
+SUPABASE_REPLICA_URL=${SUPABASE_REPLICA_URL:-${SUPABASE_URL:-http://supabase-kong:8000}}
+SUPABASE_ANON_TOKEN=${ANON_KEY:-}
+SUPABASE_SERVICE_TOKEN=${SERVICE_ROLE_KEY:-}
+
+# Firecrawl API Key (for self-hosted authentication bypass)
+TEST_API_KEY=${FIRECRAWL_TEST_API_KEY:-CHANGEME}
+
+# Bull Queue Authentication
+BULL_AUTH_KEY=${FIRECRAWL_BULL_AUTH_KEY:-CHANGEME}
+
+# Optional: OpenAI API Key for AI features
+OPENAI_API_KEY=${FIRECRAWL_OPENAI_API_KEY:-}
+
+# Optional: Proxy settings
+PROXY_SERVER=${FIRECRAWL_PROXY_SERVER:-}
+PROXY_USERNAME=${FIRECRAWL_PROXY_USERNAME:-}
+PROXY_PASSWORD=${FIRECRAWL_PROXY_PASSWORD:-}
+
+# Optional: SearXNG endpoint for search API
+SEARXNG_ENDPOINT=${FIRECRAWL_SEARXNG_ENDPOINT:-}
+SEARXNG_ENGINES=${FIRECRAWL_SEARXNG_ENGINES:-}
+SEARXNG_CATEGORIES=${FIRECRAWL_SEARXNG_CATEGORIES:-}
+
+# Optional: Search API keys
+SERPER_API_KEY=${FIRECRAWL_SERPER_API_KEY:-}
+SEARCHAPI_API_KEY=${FIRECRAWL_SEARCHAPI_API_KEY:-}
+
+# Optional: AI features (beyond OpenAI)
+MODEL_NAME=${FIRECRAWL_MODEL_NAME:-}
+MODEL_EMBEDDING_NAME=${FIRECRAWL_MODEL_EMBEDDING_NAME:-}
+OLLAMA_BASE_URL=${FIRECRAWL_OLLAMA_BASE_URL:-}
+
+# Optional: Monitoring and logging
+POSTHOG_API_KEY=${FIRECRAWL_POSTHOG_API_KEY:-}
+POSTHOG_HOST=${FIRECRAWL_POSTHOG_HOST:-}
+LOGGING_LEVEL=${FIRECRAWL_LOGGING_LEVEL:-}
+SELF_HOSTED_WEBHOOK_URL=${FIRECRAWL_SELF_HOSTED_WEBHOOK_URL:-}
+
+# Optional: Playwright settings
+BLOCK_MEDIA=${FIRECRAWL_BLOCK_MEDIA:-}
+
+# System Resource Limits
+MAX_CPU=${FIRECRAWL_MAX_CPU:-0.8}
+MAX_RAM=${FIRECRAWL_MAX_RAM:-0.8}
+EOF
+        
+        echo "✅ Configuration file regenerated"
+        echo ""
 
         # Use the correct compose file
         COMPOSE_FILE="docker-compose.yml"
@@ -50,10 +130,18 @@ cd "$FIRECRAWL_DIR"
 echo ""
 echo "⚙️  Configuring Firecrawl..."
 
+# Load Supabase configuration from supabase-project/.env if exists
+if [ -f ../supabase-project/.env ]; then
+    echo "📋 Loading Supabase configuration..."
+    source ../supabase-project/.env
+fi
+
 # Create or update .env file with our custom configuration
 cat > .env <<EOF
-# Port Configuration
+# Port Configuration (external port, internal is 3002)
 PORT=${FIRECRAWL_PORT:-3003}
+INTERNAL_PORT=3002
+HOST=0.0.0.0
 
 # Redis Configuration
 REDIS_URL=redis://redis:6379
@@ -62,8 +150,20 @@ REDIS_RATE_LIMIT_URL=redis://redis:6379
 # Playwright Service
 PLAYWRIGHT_MICROSERVICE_URL=http://playwright-service:3000/scrape
 
-# Database Configuration (if using PostgreSQL for auth)
+# Database Configuration - Using Supabase for authentication
+# Note: Change tracking requires Supabase, so set to true if you want to use change tracking
+# Even with USE_DB_AUTHENTICATION=true, API keys are still optional for self-hosted instances
 USE_DB_AUTHENTICATION=${FIRECRAWL_USE_DB_AUTHENTICATION:-false}
+
+# Supabase Configuration
+# For Docker network, use service name; for external access, use localhost:8300
+SUPABASE_URL=${SUPABASE_PUBLIC_URL:-http://supabase-kong:8000}
+SUPABASE_REPLICA_URL=${SUPABASE_REPLICA_URL:-${SUPABASE_URL:-http://supabase-kong:8000}}
+SUPABASE_ANON_TOKEN=${ANON_KEY:-}
+SUPABASE_SERVICE_TOKEN=${SERVICE_ROLE_KEY:-}
+
+# Firecrawl API Key (for self-hosted authentication bypass)
+TEST_API_KEY=${FIRECRAWL_TEST_API_KEY:-CHANGEME}
 
 # Bull Queue Authentication
 BULL_AUTH_KEY=${FIRECRAWL_BULL_AUTH_KEY:-CHANGEME}
@@ -78,6 +178,26 @@ PROXY_PASSWORD=${FIRECRAWL_PROXY_PASSWORD:-}
 
 # Optional: SearXNG endpoint for search API
 SEARXNG_ENDPOINT=${FIRECRAWL_SEARXNG_ENDPOINT:-}
+SEARXNG_ENGINES=${FIRECRAWL_SEARXNG_ENGINES:-}
+SEARXNG_CATEGORIES=${FIRECRAWL_SEARXNG_CATEGORIES:-}
+
+# Optional: Search API keys
+SERPER_API_KEY=${FIRECRAWL_SERPER_API_KEY:-}
+SEARCHAPI_API_KEY=${FIRECRAWL_SEARCHAPI_API_KEY:-}
+
+# Optional: AI features (beyond OpenAI)
+MODEL_NAME=${FIRECRAWL_MODEL_NAME:-}
+MODEL_EMBEDDING_NAME=${FIRECRAWL_MODEL_EMBEDDING_NAME:-}
+OLLAMA_BASE_URL=${FIRECRAWL_OLLAMA_BASE_URL:-}
+
+# Optional: Monitoring and logging
+POSTHOG_API_KEY=${FIRECRAWL_POSTHOG_API_KEY:-}
+POSTHOG_HOST=${FIRECRAWL_POSTHOG_HOST:-}
+LOGGING_LEVEL=${FIRECRAWL_LOGGING_LEVEL:-}
+SELF_HOSTED_WEBHOOK_URL=${FIRECRAWL_SELF_HOSTED_WEBHOOK_URL:-}
+
+# Optional: Playwright settings
+BLOCK_MEDIA=${FIRECRAWL_BLOCK_MEDIA:-}
 
 # System Resource Limits
 MAX_CPU=${FIRECRAWL_MAX_CPU:-0.8}
@@ -85,6 +205,44 @@ MAX_RAM=${FIRECRAWL_MAX_RAM:-0.8}
 EOF
 
 echo "✅ Configuration file created"
+echo ""
+
+# Create blocklist table in Supabase if it doesn't exist
+echo "📊 Verifying Supabase blocklist table..."
+if [ -f ../supabase-project/.env ]; then
+    source ../supabase-project/.env
+    if [ -n "$POSTGRES_PASSWORD" ]; then
+        # Check if supabase-db container is running
+        if docker ps --filter "name=supabase-db" --format "{{.Names}}" | grep -q "^supabase-db$"; then
+            # Create blocklist table if it doesn't exist
+            docker exec supabase-db psql -U postgres -d postgres -c "
+            CREATE TABLE IF NOT EXISTS public.blocklist (
+                id SERIAL PRIMARY KEY,
+                data JSONB NOT NULL DEFAULT '{\"blocklist\": [], \"allowedKeywords\": []}'::jsonb,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );" 2>&1 | grep -v "CREATE TABLE" || echo "   Tabela blocklist verificada/criada"
+            
+            # Insert initial row if table is empty (check if table has any rows first)
+            ROW_COUNT=$(docker exec supabase-db psql -U postgres -d postgres -t -c "SELECT COUNT(*) FROM public.blocklist;" 2>&1 | tr -d ' ' | head -1)
+            if [ "$ROW_COUNT" = "0" ]; then
+                docker exec supabase-db psql -U postgres -d postgres -c "
+                INSERT INTO public.blocklist (data)
+                VALUES ('{\"blocklist\": [], \"allowedKeywords\": []}'::jsonb);" 2>&1 | grep -v "INSERT" && echo "   Registro inicial criado"
+            else
+                echo "   Registro inicial já existe ($ROW_COUNT registro(s))"
+            fi
+            
+            echo "✅ Blocklist table ready"
+        else
+            echo "⚠️  Supabase database container not running, skipping blocklist table creation"
+        fi
+    else
+        echo "⚠️  Supabase POSTGRES_PASSWORD not found, skipping blocklist table creation"
+    fi
+else
+    echo "⚠️  Supabase .env not found, skipping blocklist table creation"
+fi
 echo ""
 
 # Check if docker-compose file exists (either .yml or .yaml)
