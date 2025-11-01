@@ -111,6 +111,39 @@ CREATE INDEX IF NOT EXISTS idx_credit_bills_tallied ON public.credit_bills(talli
 CREATE INDEX IF NOT EXISTS idx_subscriptions_team_id ON public.subscriptions(team_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON public.subscriptions(status);
 
+-- Firecrawl Jobs table (for tracking crawl/scrape/extract jobs)
+CREATE TABLE IF NOT EXISTS public.firecrawl_jobs (
+    job_id TEXT PRIMARY KEY,
+    success BOOLEAN NOT NULL,
+    message TEXT,
+    num_docs INTEGER NOT NULL DEFAULT 0,
+    docs JSONB,
+    time_taken DOUBLE PRECISION NOT NULL,
+    team_id TEXT,
+    mode TEXT NOT NULL,
+    url TEXT,
+    crawler_options JSONB,
+    page_options JSONB,
+    origin TEXT,
+    integration TEXT,
+    num_tokens DOUBLE PRECISION,
+    retry BOOLEAN DEFAULT false,
+    crawl_id TEXT,
+    tokens_billed INTEGER,
+    is_migrated BOOLEAN DEFAULT true,
+    cost_tracking JSONB,
+    pdf_num_pages INTEGER,
+    credits_billed INTEGER,
+    change_tracking_tag TEXT,
+    dr_clean_by TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_firecrawl_jobs_team_id ON public.firecrawl_jobs(team_id);
+CREATE INDEX IF NOT EXISTS idx_firecrawl_jobs_crawl_id ON public.firecrawl_jobs(crawl_id);
+CREATE INDEX IF NOT EXISTS idx_firecrawl_jobs_created_at ON public.firecrawl_jobs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_firecrawl_jobs_mode ON public.firecrawl_jobs(mode);
+
 -- ============================================================================
 -- FUNCTIONS
 -- ============================================================================
