@@ -264,6 +264,16 @@ if [ -f ../supabase-project/.env ]; then
             fi
             
             echo "✅ Blocklist table ready"
+            
+            # Create Firecrawl authentication schema if it doesn't exist
+            echo "📊 Creating Firecrawl authentication schema..."
+            if [ -f ../firecrawl-auth-schema.sql ]; then
+                # Copy SQL file into container
+                docker cp ../firecrawl-auth-schema.sql supabase-db:/tmp/firecrawl-auth-schema.sql
+                docker exec supabase-db psql -U postgres -d postgres -f /tmp/firecrawl-auth-schema.sql > /dev/null 2>&1 && echo "   ✅ Firecrawl auth schema created"
+            else
+                echo "   ⚠️  firecrawl-auth-schema.sql not found, skipping auth schema creation"
+            fi
         else
             echo "⚠️  Supabase database container not running, skipping blocklist table creation"
         fi
